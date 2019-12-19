@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Diagnostics;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,6 +18,7 @@ namespace Joulurauhaa2019
         Left,
         Inside
     }
+    
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
@@ -24,37 +26,37 @@ namespace Joulurauhaa2019
     {
         //DEBUG
         Texture2D square;
-        Vector2 mousePos;
         //DEBUG
 
-        Pukki player;
-        List<Tonttu> elves;
-        RectangleBoard board;
-
-        Random rand;
-
-        const float playerRad = Pukki.radius;
-        const float elfRad = Tonttu.radius;
         const int elfSpawnRate = 2000; //Milliseconds
 
+        //Graphics
         Texture2D sceneBackground;
-        Texture2D[] playerFrames;
         Texture2D elfGrabFrame;
         Texture2D[] elfFrames;
+        Texture2D[] playerFrames;
 
+        //Sounds
         SoundEffect backgroundSound;
 
+        //Utility
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
+        Random rand;
+
+        RectangleBoard board;
+        Pukki player;
+        List<Tonttu> elves;
+
+        Vector2 mousePos;
+ 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             graphics.PreferredBackBufferWidth = 972;
             graphics.PreferredBackBufferHeight = 640;
             Content.RootDirectory = "Content";
-
-            rand = new Random();
         }
 
         /// <summary>
@@ -68,6 +70,7 @@ namespace Joulurauhaa2019
             elves = new List<Tonttu>();
             board = new RectangleBoard(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
 
+            rand = new Random();
             mousePos = Vector2.Zero;
 
             base.Initialize();
@@ -79,29 +82,30 @@ namespace Joulurauhaa2019
         /// </summary>
         protected override void LoadContent()
         {
-            square = Content.Load<Texture2D>("unitSquare");
-
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            playerFrames = LoadAll("pukki_bottle_centered", 4);
+            //DEBUG
+            square = Content.Load<Texture2D>("unitSquare");
+            //DEBUG
 
             sceneBackground = Content.Load<Texture2D>("Background_486x320_gimp"); 
-
-            elfFrames = LoadAll("elf_64", 4);
             elfGrabFrame = Content.Load<Texture2D>("elf_grab_64");
+            elfFrames = LoadAll("elf_64", 4);
+            playerFrames = LoadAll("pukki_bottle_centered", 4);
 
             //backgroundSound = Content.Load<SoundEffect>("drunkenTipTap");
             //var backSong = backgroundSound.CreateInstance();
             //backSong.IsLooped = true;
             //backSong.Play();
+            //base.BeginRun(); TODO what is this?
         
-            player = new Pukki(new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2), playerFrames);
-            //base.BeginRun();
-            //SpawnElf();
+            player = new Pukki(
+                new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2)
+                , playerFrames);
         }
 
-        public Texture2D[] LoadAll(string tag, int n)
+        Texture2D[] LoadAll(string tag, int n)
         {
             Texture2D[] textures = new Texture2D[n+1];
             //Save default sprite into index 0
@@ -113,13 +117,14 @@ namespace Joulurauhaa2019
             return textures;
         }
 
+
+
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
         /// game-specific content.
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
         }
 
         /// <summary>
@@ -129,52 +134,52 @@ namespace Joulurauhaa2019
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
-
             MouseState mState = Mouse.GetState();
             KeyboardState kState = Keyboard.GetState();
 
-            player.facer.velocity = Vector2.Zero;
-            if (kState.IsKeyDown(Keys.A))
-                player.facer.velocity += -Vector2.UnitX;
-            if (kState.IsKeyDown(Keys.D))
-                player.facer.velocity += Vector2.UnitX;
-            if (kState.IsKeyDown(Keys.W))
-                player.facer.velocity += -Vector2.UnitY;
-            if (kState.IsKeyDown(Keys.S))
-                player.facer.velocity += Vector2.UnitY;
+            if (kState.IsKeyDown(Keys.Escape))
+                Exit();
 
-            //if (mState.LeftButton == ButtonState.Pressed)
+            player.Facer.Velocity = Vector2.Zero;
+            if (kState.IsKeyDown(Keys.W))
+                player.Facer.Velocity += -Vector2.UnitY;
+            if (kState.IsKeyDown(Keys.A))
+                player.Facer.Velocity += -Vector2.UnitX;
+            if (kState.IsKeyDown(Keys.S))
+                player.Facer.Velocity += Vector2.UnitY;
+            if (kState.IsKeyDown(Keys.D))
+                player.Facer.Velocity += Vector2.UnitX;
+
+            //if (mState.LeftButton == ButtonState.Pressed) //Buggy with Thinkpad touchpoint
             if (kState.IsKeyDown(Keys.Space))
                 player.Swing();
 
-            switch (board.Colliding(player.facer))
+            switch (board.Colliding(player.Facer))
             {
                 case Bounds.Left:
-                    player.facer.position.X = player.facer.size;
+                    player.Facer.Position.X = player.Facer.Radius;
                     break;
                 case Bounds.Right:
-                    player.facer.position.X = graphics.PreferredBackBufferWidth - player.facer.size;
+                    player.Facer.Position.X = graphics.PreferredBackBufferWidth - player.Facer.Radius;
                     break;
                 case Bounds.Top:
-                    player.facer.position.Y = player.facer.size;
+                    player.Facer.Position.Y = player.Facer.Radius;
                     break;
                 case Bounds.Bottom:
-                    player.facer.position.Y = graphics.PreferredBackBufferHeight - player.facer.size;
+                    player.Facer.Position.Y = graphics.PreferredBackBufferHeight - player.Facer.Radius;
                     break;
-                default:
+                default: //Inside
                     break;
             }
 
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             player.ApplySpeed();
-            player.facer.Move(delta);
+            player.Facer.Move(deltaTime);
 
             mousePos.X = mState.X;
             mousePos.Y = mState.Y;
-            player.facer.facing = Vector2.Subtract(mousePos, player.facer.position);
+            player.Facer.Facing = Vector2.Subtract(mousePos, player.Facer.Position);
 
             if (gameTime.TotalGameTime.Milliseconds % elfSpawnRate == 0)
                 SpawnElf();
@@ -185,44 +190,44 @@ namespace Joulurauhaa2019
                 {
                     if (t2 == t)
                         continue;
-                    if (t.facer.CircleCollision(t2.facer))
+                    if (t.Facer.CollidingWith(t2.Facer))
                     {
-                        CircleFacer.Bounce(ref t.facer, ref t2.facer);
+                        CircleFacer.Bounce(ref t.Facer, ref t2.Facer);
                     }
                 }
 
-                if (t.facer.CircleCollision(player.facer))
+                if (t.Facer.CollidingWith(player.Facer))
                 {
-                    CircleFacer.Bounce(ref player.facer, ref t.facer);
+                    CircleFacer.Bounce(ref player.Facer, ref t.Facer);
                     //t.facer.velocity = Vector2.Zero;
                     //t.animater.InitializeAnimation();
                     //t.animater.SetDefaultSprite(elfGrabFrame);
                 }
 
-                switch (board.Colliding(t.facer))
+                switch (board.Colliding(t.Facer))
                 {
                     case Bounds.Left:
-                        t.facer.velocity = Vector2.Reflect(t.facer.velocity, Vector2.UnitX);
-                        t.facer.position.X = t.facer.size;
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitX);
+                        t.Facer.Position.X = t.Facer.Radius;
                         break;
                     case Bounds.Right:
-                        t.facer.velocity = Vector2.Reflect(t.facer.velocity, -Vector2.UnitX);
-                        t.facer.position.X = graphics.PreferredBackBufferWidth - t.facer.size;
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitX);
+                        t.Facer.Position.X = graphics.PreferredBackBufferWidth - t.Facer.Radius;
                         break;
                     case Bounds.Top:
-                        t.facer.velocity = Vector2.Reflect(t.facer.velocity, Vector2.UnitY);
-                        t.facer.position.Y = t.facer.size;
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitY);
+                        t.Facer.Position.Y = t.Facer.Radius;
                         break;
                     case Bounds.Bottom:
-                        t.facer.velocity = Vector2.Reflect(t.facer.velocity, -Vector2.UnitY);
-                        t.facer.position.Y = graphics.PreferredBackBufferHeight - t.facer.size;
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitY);
+                        t.Facer.Position.Y = graphics.PreferredBackBufferHeight - t.Facer.Radius;
                         break;
                     default:
                         break;
                 }
-                t.facer.facing = Vector2.Subtract(player.facer.position, t.facer.position);
+                t.Facer.Facing = Vector2.Subtract(player.Facer.Position, t.Facer.Position);
 
-                t.facer.Move(delta);
+                t.Facer.Move(deltaTime);
             }
             
             base.Update(gameTime);
@@ -236,52 +241,72 @@ namespace Joulurauhaa2019
         {
             GraphicsDevice.Clear(Color.Black);
 
+            
             spriteBatch.Begin();
-                spriteBatch.Draw(sceneBackground, 
-                    new Rectangle(0,0,972,640),
-                    null, Color.White);
 
-                spriteBatch.Draw(player.animater.getFrame(),
-                                 new Rectangle((int)player.facer.position.X, (int)player.facer.position.Y, 250, 250),
-                                 null, Color.White, player.facer.FaceToRotation(),
-                                 player.animater.bodyOffset, SpriteEffects.None,0);
-                //spriteBatch.Draw(player.animater.getFrame(), 
-                //                 player.facer.position-player.animater.bodyOffset,
-                //                 Color.White);
-                spriteBatch.Draw(square, player.facer.position, Color.Pink);
+            spriteBatch.Draw(sceneBackground, new Rectangle(0,0,972,640), null, Color.White);
 
-                foreach (Tonttu t in elves)
-                {
-                    spriteBatch.Draw(t.animater.getFrame(),
-                                 new Rectangle((int)t.facer.position.X, (int)t.facer.position.Y, (int)elfRad*2, (int)elfRad*2),
-                                 null, Color.White, t.facer.FaceToRotation(),
-                                 t.animater.bodyOffset, SpriteEffects.None,0);
-                    //spriteBatch.Draw(t.animater.getFrame(), t.facer.position-t.animater.bodyOffset, Color.White);
-                    spriteBatch.Draw(square, t.facer.position, Color.Pink);
-                }
+            spriteBatch.Draw(player.Animater.GetCurrentFrame(),
+                             new Rectangle((int)player.Facer.Position.X, (int)player.Facer.Position.Y, 250, 250),
+                             null, Color.White, player.Facer.GetRotation(),
+                             player.Animater.Pivot, SpriteEffects.None,0);
+            //spriteBatch.Draw(player.animater.getFrame(), 
+            //                 player.facer.position-player.animater.bodyOffset,
+            //                 Color.White);
+            spriteBatch.Draw(square, player.Facer.Position, Color.Pink);
+
+            foreach (Tonttu t in elves)
+            {
+                spriteBatch.Draw(t.Animater.GetCurrentFrame(),
+                             new Rectangle((int)t.Facer.Position.X, (int)t.Facer.Position.Y, (int)Tonttu.Radius*2, (int)Tonttu.Radius*2),
+                             null, Color.White, t.Facer.GetRotation(),
+                             t.Animater.Pivot, SpriteEffects.None,0);
+                //spriteBatch.Draw(t.animater.getFrame(), t.facer.position-t.animater.bodyOffset, Color.White);
+                spriteBatch.Draw(square, t.Facer.Position, Color.Pink);
+            }
     
-                //spriteBatch.Draw(sceneFraming, 
-                //    new Rectangle(0,0,972,640),
-                //    null, Color.White);
-                spriteBatch.Draw(square, mousePos, Color.Pink);
-                spriteBatch.Draw(elfGrabFrame, player.facer.position+player.facer.facing, Color.Pink);
-                
+            //spriteBatch.Draw(sceneFraming, 
+            //    new Rectangle(0,0,972,640),
+            //    null, Color.White);
+            spriteBatch.Draw(square, mousePos, Color.Pink);
+            spriteBatch.Draw(elfGrabFrame, player.Facer.Position+player.Facer.Facing, Color.Pink);
+            
             spriteBatch.End();
+
 
             base.Draw(gameTime);
         }
 
         private void SpawnElf()
         {
-            int ri = rand.Next(2);
-            Vector2 tpos = ri == 0 
-                         ? new Vector2(rand.Next((int)elfRad, Window.ClientBounds.Width), (int)elfRad)
-                         : new Vector2((int)elfRad, rand.Next((int)elfRad, Window.ClientBounds.Height));
-            Vector2 tvelo = ri == 0
-                          ? new Vector2(1, 1)
-                          : new Vector2(1, -1);
-            Tonttu theElf = new Tonttu(tpos, tvelo, elfFrames);
-            theElf.animater.Start();
+            Vector2 spawnPosition = player.Facer.Position;
+            switch (rand.Next(4))
+            {
+                case 0:  //top
+                    spawnPosition = new Vector2(
+                        rand.Next((int)Tonttu.Radius, Window.ClientBounds.Width)
+                        ,Tonttu.Radius);
+                    break;
+                case 1:  //right
+                    spawnPosition = new Vector2(
+                        Window.ClientBounds.Width - Tonttu.Radius
+                        ,rand.Next((int)Tonttu.Radius, Window.ClientBounds.Height));
+                    break;
+                case 2:  //bottom
+                    spawnPosition = new Vector2(
+                        rand.Next((int)Tonttu.Radius, Window.ClientBounds.Width)
+                        ,Window.ClientBounds.Height - Tonttu.Radius);
+                    break;
+                default: //left
+                    spawnPosition = new Vector2(
+                        Tonttu.Radius
+                        ,rand.Next((int)Tonttu.Radius, Window.ClientBounds.Height));
+                    break;
+            }
+            Tonttu theElf = new Tonttu(
+                spawnPosition
+                , Vector2.Normalize(Vector2.Subtract(player.Facer.Position, spawnPosition))
+                , elfFrames);
             elves.Add(theElf);
         }
     }

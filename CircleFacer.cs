@@ -3,47 +3,44 @@ using System;
 
 namespace Pipo 
 {
-    //TODO Add sprite data
-    //EDIT sprite into own class -> recognition with id -> ECS??
-    //Anchor/pivot is center
+    //TODO sprite into own class -> recognition with id -> ECS??
     class CircleFacer
     {
-        //readonly int id; //static readonly?
-        public readonly string tag; 
+        //public readonly int id; //static readonly?
+        //public readonly string Tag; 
 
-        public Vector2 position;
-        public Vector2 velocity;
-        public Vector2 facing; //TODO int rotation?
-        public float size; //radius
-        public bool isHitBoxActive;
+        public Vector2 Position;
+        public Vector2 Facing;
+        public Vector2 Velocity;
+        public readonly float Radius;
 
-        public CircleFacer(string tag0, 
-                        Vector2 pos, Vector2 velo, float size0, bool active)
+        private bool isHitBoxActive{ get; set; } //TODO protection level :thinking:
+
+        /// <summary>
+        /// The instance will be set to face right (1,0)
+        /// </summary>
+        public CircleFacer(float radius, Vector2 position, Vector2 velocity, bool isHitBoxActive)
         {
-            tag = tag0;
-
-            position = pos;
-            velocity = velo;
-            size = size0;
-            isHitBoxActive = active;
-
-            facing = new Vector2(0,1);
+            this.Position = position;
+            this.Velocity = velocity;
+            this.Radius = radius;
+            this.isHitBoxActive = isHitBoxActive;
+            Facing = Vector2.UnitX;
         }
 
-        public void Move(float delta)
+        public void Move(float deltaTime)
         {
-            position += velocity * delta;
+            Position += Velocity * deltaTime;
         }
 
-        public float FaceToRotation()
+        public float GetRotation()
         {
-            return (float)Math.Atan2(facing.Y, facing.X);
-            //return (float)Math.Acos(Vector2.Dot(Vector2.UnitY, facing)/facing.Length());
+            return (float)Math.Atan2(Facing.Y, Facing.X);
         }
 
-        public bool CircleCollision(CircleFacer target)
+        public bool CollidingWith(CircleFacer target)
         {
-            return Vector2.Distance(position, target.position) < (size + target.size);
+            return Vector2.Distance(Position, target.Position) <= (Radius + target.Radius);
         }
 
         //Change this to copy to RectangleBoard?
@@ -55,13 +52,13 @@ namespace Pipo
         //         && position.Y < target.position.Y + target.size);
         //}
 
-        // sure this works
+        //TODO Possibly needs some more work: weird jittering
         public static void Bounce(ref CircleFacer cf1, ref CircleFacer cf2)
         {
-            Vector2 tmpVelo1 = cf1.velocity;
-            Vector2 tmpVelo2 = cf2.velocity;
-            cf1.velocity = Vector2.Reflect(tmpVelo1, Vector2.Normalize(Vector2.Subtract(cf1.position, cf2.position)));
-            cf2.velocity = Vector2.Reflect(tmpVelo2, Vector2.Normalize(Vector2.Subtract(cf2.position, cf1.position)));
+            Vector2 tmpVelo1 = cf1.Velocity;
+            Vector2 tmpVelo2 = cf2.Velocity;
+            cf1.Velocity = Vector2.Reflect(tmpVelo1, Vector2.Normalize(Vector2.Subtract(cf1.Position, cf2.Position)));
+            cf2.Velocity = Vector2.Reflect(tmpVelo2, Vector2.Normalize(Vector2.Subtract(cf2.Position, cf1.Position)));
         }
     }
 }
