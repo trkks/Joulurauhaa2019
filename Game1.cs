@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Input;
 using Pipo;
 
@@ -14,18 +14,26 @@ namespace Joulurauhaa2019
     /// </summary>
     public class Game1 : Game
     {
+        //DEBUG
+        Texture2D square;
+        //DEBUG
+
         Pukki player;
         List<Tonttu> elves;
+        RectangleBoard board;
 
-        int tonttuFrame = 0;
-        Vector2[] tonttuSpawn;
-        Vector2 tonttuVelo;
-        float tonttuSpeed;
-        float elfRad = 64;
-        Vector2 tonttuSpriteOffset;
+        Random rand;
 
-        Texture2D backGround;
+        const float playerRad = Pukki.radius;
+        const float elfRad = Tonttu.radius;
+        const int elfSpawnRate = 2000; //Milliseconds
+
+        Texture2D sceneBackground;
+        Texture2D[] playerFrames;
+        Texture2D elfGrabFrame;
         Texture2D[] elfFrames;
+
+        SoundEffect backgroundSound;
 
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -36,6 +44,8 @@ namespace Joulurauhaa2019
             graphics.PreferredBackBufferWidth = 972;
             graphics.PreferredBackBufferHeight = 640;
             Content.RootDirectory = "Content";
+
+            rand = new Random();
         }
 
         /// <summary>
@@ -47,8 +57,7 @@ namespace Joulurauhaa2019
         protected override void Initialize()
         {
             elves = new List<Tonttu>();
-            tonttuSpeed = 400.0f;
-            tonttuSpriteOffset = new Vector2(elfRad, elfRad);
+            board = new RectangleBoard(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
 
             base.Initialize();
         }
@@ -59,20 +68,38 @@ namespace Joulurauhaa2019
         /// </summary>
         protected override void LoadContent()
         {
+            square = Content.Load<Texture2D>("unitSquare");
+
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            backGround = Content.Load<Texture2D>("Background_486x320"); 
+
+            playerFrames = LoadAll("pukki_bottle_192", 4);
+
+            sceneBackground = Content.Load<Texture2D>("Background_486x320_gimp"); 
+
             elfFrames = LoadAll("elf_64", 4);
-            // TODO: use this.Content to load your game content here
+            //elfGrabFrame = Content.Load<Texture2D>("elf_grab");
+            elfGrabFrame = elfFrames[0];
+
+            backgroundSound = Content.Load<SoundEffect>("drunkenTipTap");
+            var backSong = backgroundSound.CreateInstance();
+            backSong.IsLooped = true;
+            backSong.Play();
+        
+            player = new Pukki(new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2),
+                               70, playerFrames);
+            //base.BeginRun();
+            //SpawnElf();
         }
 
         public Texture2D[] LoadAll(string tag, int n)
         {
             Texture2D[] textures = new Texture2D[n+1];
+            //Save default sprite into index 0
             textures[0] = Content.Load<Texture2D>(tag + "_F0");
             for (int i = 0; i < n; i++)
             {
-                textures[i] = Content.Load<Texture2D>(tag + "_F" + i);
+                textures[i+1] = Content.Load<Texture2D>(tag + "_F" + i);
             }
             return textures;
         }
@@ -93,13 +120,30 @@ namespace Joulurauhaa2019
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            if (gameTime.TotalGameTime.Milliseconds % 2000 == 0)
-                SpawnElf();
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            if (Keyboard.GetState().IsKeyDown(Keys.Space))
+                player.Swing(gameTime.TotalGameTime.Milliseconds);
+
+            player.facer.velocity = Vector2.Zero;
+            if (Keyboard.GetState().IsKeyDown(Keys.A))
+                player.facer.velocity += -Vector2.UnitX;
+            if (Keyboard.GetState().IsKeyDown(Keys.D))
+                player.facer.velocity += Vector2.UnitX;
+            if (Keyboard.GetState().IsKeyDown(Keys.W))
+                player.facer.velocity += -Vector2.UnitY;
+            if (Keyboard.GetState().IsKeyDown(Keys.S))
+                player.facer.velocity += Vector2.UnitY;
+
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            player.ApplySpeed();
+            player.facer.Move(delta);
+
+            if (gameTime.TotalGameTime.Milliseconds % elfSpawnRate == 0)
+                SpawnElf();
 
             foreach (Tonttu t in elves)
             {
@@ -107,36 +151,26 @@ namespace Joulurauhaa2019
                 {
                     if (t2 == t)
                         continue;
-                    if (t.spaFac.CircleCollision(t2.spaFac))
+                    if (t.facer.CircleCollision(t2.facer))
                     {
-                        t.spaFac.velocity *= -1;
-                        t2.spaFac.velocity *= -1;
+                        CircleFacer.Bounce(ref t.facer, ref t2.facer);
                     }
                 }
-                if (t.spaFac.position.X <= 0)
+
+                if (t.facer.CircleCollision(player.facer))
                 {
-                    t.spaFac.position.X = 0;
-                    t.spaFac.velocity = Vector2.Reflect(t.spaFac.velocity, new Vector2(1, 0));
-                }
-                else if (Window.ClientBounds.Width - elfRad*2 < t.spaFac.position.X)
-                {
-                    t.spaFac.position.X = Window.ClientBounds.Width - elfRad*2;
-                    t.spaFac.velocity = Vector2.Reflect(t.spaFac.velocity, new Vector2(1, 0));
-                }
-                if (t.spaFac.position.Y <= 0)
-                {
-                    t.spaFac.position.Y = 0;
-                    t.spaFac.velocity = Vector2.Reflect(t.spaFac.velocity, new Vector2(0, 1));
-                }
-                else if (Window.ClientBounds.Height - elfRad*2 < t.spaFac.position.Y)
-                {
-                    t.spaFac.position.Y = Window.ClientBounds.Height - elfRad*2;
-                    t.spaFac.velocity = Vector2.Reflect(t.spaFac.velocity, new Vector2(0, 1));
+                    t.facer.velocity = Vector2.Zero;
+                    t.animater.InitializeAnimation();
+                    t.animater.SetDefaultSprite(elfGrabFrame);
                 }
 
-                t.spaFac.Move(delta);
+                Nullable<Vector2> refNormal = board.OnBoard(t.facer); 
+                if (refNormal != null)
+                {
+                    t.facer.velocity = Vector2.Reflect(t.facer.velocity, refNormal.Value);
+                }
+                t.facer.Move(delta);
             }
-
             
             base.Update(gameTime);
         }
@@ -150,13 +184,22 @@ namespace Joulurauhaa2019
             GraphicsDevice.Clear(Color.Black);
 
             spriteBatch.Begin();
-            spriteBatch.Draw(backGround, 
-                new Rectangle(0,0,972,640),
-                null, Color.White);
-            foreach (Tonttu t in elves)
-            {
-                spriteBatch.Draw(t.sprAnim.getNext(), t.spaFac.position + new Vector2(t.spaFac.size), Color.White);
-            }
+                spriteBatch.Draw(sceneBackground, 
+                    new Rectangle(0,0,972,640),
+                    null, Color.White);
+
+                spriteBatch.Draw(player.animater.getNext(), player.facer.position-player.animater.bodyOffset, Color.White);
+                spriteBatch.Draw(square, player.facer.position, Color.Pink);
+
+                foreach (Tonttu t in elves)
+                {
+                    spriteBatch.Draw(t.animater.getNext(), t.facer.position-t.animater.bodyOffset, Color.White);
+                    spriteBatch.Draw(square, t.facer.position, Color.Pink);
+                }
+    
+                //spriteBatch.Draw(sceneFraming, 
+                //    new Rectangle(0,0,972,640),
+                //    null, Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -164,16 +207,16 @@ namespace Joulurauhaa2019
 
         private void SpawnElf()
         {
-            Random rand = new Random();
-            Vector2 tpos = new Vector2((float)rand.NextDouble() * Window.ClientBounds.Width, (float)rand.NextDouble() * Window.ClientBounds.Height);
-            Vector2 tvelo = tonttuSpeed* Vector2.Normalize(new Vector2(rand.Next(0, 150), rand.Next(0, 150)));
-            elves.Add(new Tonttu(tpos, tvelo, elfRad, elfFrames));
-        }
-
-        private bool CirclesAreColliding(Vector2 p1, Vector2 p2, int rad1, int rad2)
-        {
-            int a = (int)Vector2.Distance(p1, p2);
-            return a < (rad1 + rad2);
+            int ri = rand.Next(2);
+            Vector2 tpos = ri == 0 
+                         ? new Vector2(rand.Next((int)elfRad, Window.ClientBounds.Width), (int)elfRad)
+                         : new Vector2((int)elfRad, rand.Next((int)elfRad, Window.ClientBounds.Height));
+            Vector2 tvelo = ri == 0
+                          ? new Vector2(1, 1)
+                          : new Vector2(1, -1);
+            Tonttu theElf = new Tonttu(tpos, tvelo, elfFrames);
+            theElf.animater.isAnimating = true;
+            elves.Add(theElf);
         }
     }
 }

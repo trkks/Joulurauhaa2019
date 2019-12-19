@@ -1,23 +1,42 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Pipo;
 
 namespace Pipo 
 {
     class Pukki
     {
+        const int SWING_TIME = 14;
         const string tag = "pukki";
-        const float speed = 200;
+        const float speed = 100;
+        public const float radius = 70;
 
-        public SpatialFacer spaFac;
-        public SpriteAnimater sprAnim;
+        public CircleFacer facer;
+        public SpriteAnimater animater;
+        public int swingTimeStart;
 
-        public Pukki(Vector2 pos, float size, Texture2D[] frames)
+        public Pukki(Vector2 pos, float radius, Texture2D[] frames)
         {
-            spaFac = new SpatialFacer(tag, pos, new Vector2(speed, speed), size, true);
-            sprAnim = new SpriteAnimater(frames);
+            facer = new CircleFacer(tag, pos, Vector2.Zero, radius, true);
+            animater = new SpriteAnimater(frames, new int[]{ 0, 2,5,5,2 }, radius);
+            swingTimeStart = int.MaxValue-SWING_TIME;
         }
 
+        public void ApplySpeed()
+        {
+            facer.velocity *= speed;
+        }
+        
+        public void Swing(int swingInputTime)
+        {
+            if (swingTimeStart + SWING_TIME < swingInputTime)
+            {
+                animater.isAnimating = false;
+                return;
+            }
+            swingTimeStart = swingInputTime;
+            animater.InitializeAnimation();
+            animater.isAnimating = true;
+        }
         
     }
 }
