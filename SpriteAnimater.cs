@@ -62,6 +62,12 @@ namespace Pipo
             frameTimer = 0;
         }
 
+        public void Start()
+        {
+            isAnimating = true;
+            looping = true;
+        }
+
         public void PlayOnce()
         {
             isAnimating = true;

@@ -35,9 +35,10 @@ namespace Pipo
             position += velocity * delta;
         }
 
-        public float faceToRotation()
+        public float FaceToRotation()
         {
-            return (float)Math.Acos(Vector2.Dot(Vector2.UnitY, facing)/facing.Length());
+            return (float)Math.Atan2(facing.Y, facing.X);
+            //return (float)Math.Acos(Vector2.Dot(Vector2.UnitY, facing)/facing.Length());
         }
 
         public bool CircleCollision(CircleFacer target)
