@@ -16,6 +16,7 @@ namespace Pipo
         public int currentFrame;
         public int frameTimer;
         public bool isAnimating;
+        public bool looping;
         public Vector2 bodyOffset;
         //float rotation;
 
@@ -32,30 +33,60 @@ namespace Pipo
             bodyOffset = new Vector2(bodyRadius,bodyRadius);
 
             isAnimating = false;
-            currentFrame = 1;
-            frameTimer = 0;
-        }
-        
-        public void InitializeAnimation()
-        {
-            isAnimating = false;
+            looping = true;
             currentFrame = 1;
             frameTimer = 0;
         }
 
-        public Texture2D getNext()
+        public SpriteAnimater(Texture2D[] frames0, int[] times, Vector2 bodyOffset0)
         {
-            if (isAnimating)
+            frames = frames0;
+            if (times.Length != frames.Length)
+                frameTimes = new int[frames.Length];
+            else
+                frameTimes = times;
+
+            frameCount = frames.Length;
+            bodyOffset = bodyOffset0;
+
+            isAnimating = false;
+            currentFrame = 1;
+            frameTimer = 0;
+        } 
+
+        public void InitializeAnimation()
+        {
+            isAnimating = false;
+            looping = true;
+            currentFrame = 1;
+            frameTimer = 0;
+        }
+
+        public void PlayOnce()
+        {
+            isAnimating = true;
+            looping = false;
+        }
+
+        public Texture2D getFrame()
+        {
+            if (!isAnimating)
+                return frames[0];
+
+            if (currentFrame+1 == frameCount && !looping)
             {
-                frameTimer++;
-                if (frameTimer >= frameTimes[currentFrame])
-                {
-                    currentFrame = (currentFrame + 1) % frameCount;
-                    frameTimer = 0;
-                }
-                return frames[currentFrame];
+                isAnimating = false;
+                return frames[0];
             }
-            return frames[0];
+
+            frameTimer++;
+            if (frameTimer >= frameTimes[currentFrame])
+            {
+                currentFrame = (currentFrame + 1) % frameCount;
+                frameTimer = 0;
+            }
+
+            return frames[currentFrame];
         }
 
         public void SetDefaultSprite(Texture2D sprite)

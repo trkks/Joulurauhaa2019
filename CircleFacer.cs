@@ -14,7 +14,7 @@ namespace Pipo
         public Vector2 position;
         public Vector2 velocity;
         public Vector2 facing; //TODO int rotation?
-        public float size;
+        public float size; //radius
         public bool isHitBoxActive;
 
         public CircleFacer(string tag0, 
