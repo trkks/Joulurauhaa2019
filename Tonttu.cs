@@ -23,7 +23,7 @@ namespace Joulurauhaa2019
         {
             this.deathFrame = deathFrame;
             pivot = new Vector2( 32, 35 );
-            delays = new int[]{ 0, 5,2,5,2 };
+            delays = new int[]{ 5,2,5,2 };
 
             Facer = new CircleFacer(Radius, position, Speed*velocity, true);
             Animater = new SpriteAnimater(frames.Length, pivot);

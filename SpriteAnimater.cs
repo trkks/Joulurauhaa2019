@@ -37,6 +37,7 @@ namespace Pipo
             IsAnimating = false;
             currentFrame = 0;
             passedDelay = 0;
+            actionFrame = -1;
         }
 
         public void SetFrames(Texture2D[] frames, int[] delays)
@@ -75,21 +76,23 @@ namespace Pipo
                 {
                     currentFrame++;
                     currentFrame %= frameCount;
-                    if (currentFrame == 0)
-                        if (isLooping)
-                            currentFrame = 1;
-                        else
+                    if (!isLooping)
+                    {
+                        if (actionFrame < -1)
                         {
-                            postAction();
                             Reset();
+                            postAction();
+                            actionFrame = -1;
                         }
+                    }
                     passedDelay = 0;
                 }
                 if (currentFrame == actionFrame)
                 {
                     action();
-                    actionFrame = -1;
+                    actionFrame = -2;
                 }
+                return Frames[currentFrame];
             }
             return defaultSprite;
         }

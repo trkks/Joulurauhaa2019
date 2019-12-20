@@ -128,12 +128,11 @@ namespace Joulurauhaa2019
 
         Texture2D[] LoadFrames(string tag, int n)
         {
-            Texture2D[] textures = new Texture2D[n+1];
+            Texture2D[] textures = new Texture2D[n];
             //Save default sprite into index 0
-            textures[0] = Content.Load<Texture2D>(tag + "_F0");
             for (int i = 0; i < n; i++)
             {
-                textures[i+1] = Content.Load<Texture2D>(tag + "_F" + i);
+                textures[i] = Content.Load<Texture2D>(tag + "_F" + i);
             }
             return textures;
         }
@@ -197,17 +196,6 @@ namespace Joulurauhaa2019
             }
 
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            player.ApplySpeed();
-            player.Move(deltaTime);
-
-            mousePos.X = mState.X;
-            mousePos.Y = mState.Y;
-            player.Body.Facing = Vector2.Subtract(mousePos, player.Body.Position);
-
-            if (gameTime.TotalGameTime.Milliseconds % elfSpawnRate == 0)
-                SpawnElf();
-
             foreach (Tonttu t in elves)
             {
                 if (!t.isActive)
@@ -272,6 +260,17 @@ namespace Joulurauhaa2019
 
                 t.Facer.Move(deltaTime);
             }
+
+
+            player.ApplySpeed();
+            player.Move(deltaTime);
+
+            mousePos.X = mState.X;
+            mousePos.Y = mState.Y;
+            player.Body.Facing = Vector2.Subtract(mousePos, player.Body.Position);
+
+            if (gameTime.TotalGameTime.Milliseconds % elfSpawnRate == 0)
+                SpawnElf();
             
             base.Update(gameTime);
         }

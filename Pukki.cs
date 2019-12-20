@@ -33,7 +33,7 @@ namespace Joulurauhaa2019
         {
             this.deathFrame = deathFrame;
             pivot = new Vector2( 135, 125 );
-            delays = new int[]{ 0, 0,2,6,4 };
+            delays = new int[]{ 0,2,6,4 };
 
             Body = new CircleFacer(Radius, position, Vector2.Zero, true);
             Bottle = new CircleFacer(
