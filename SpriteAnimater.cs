@@ -20,6 +20,7 @@ namespace Pipo
         //readonly int id;
         public bool IsAnimating;
         public readonly Vector2 Pivot;
+        private Texture2D defaultSprite;
         public Texture2D[] Frames;
 
         private bool isLooping;
@@ -42,6 +43,7 @@ namespace Pipo
         {
             this.Frames = frames;
             this.delays = delays;
+            defaultSprite = Frames[0];
         }
 
         public void Start(bool looping)
@@ -61,7 +63,7 @@ namespace Pipo
 
         public void SetDefaultSprite(Texture2D sprite)
         {
-            Frames[0] = sprite;
+            defaultSprite = sprite;
         }
 
         public Texture2D GetCurrentFrame()
@@ -89,7 +91,7 @@ namespace Pipo
                     actionFrame = -1;
                 }
             }
-            return Frames[currentFrame];
+            return defaultSprite;
         }
     }
 }

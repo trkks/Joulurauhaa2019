@@ -42,7 +42,8 @@ namespace Joulurauhaa2019
 
         //Sounds
         SoundEffect backgroundSound;
-        SoundEffectInstance[] bottlehitsounds;
+        SoundEffectInstance[] bottleHitSounds;
+        SoundEffectInstance elfGrabSound;
 
         //Utility
         GraphicsDeviceManager graphics;
@@ -78,7 +79,7 @@ namespace Joulurauhaa2019
             rand = new Random();
             mousePos = Vector2.Zero;
 
-            bottlehitsounds = new SoundEffectInstance[4];
+            bottleHitSounds = new SoundEffectInstance[4];
 
             base.Initialize();
         }
@@ -97,23 +98,24 @@ namespace Joulurauhaa2019
             circle = Content.Load<Texture2D>("circle100");
             //DEBUG
 
-            sceneBackground = Content.Load<Texture2D>("Background_486x320_gimp"); 
+            sceneBackground = Content.Load<Texture2D>("Background_486x320_texted"); 
             elfGrabFrame = Content.Load<Texture2D>("elf_grab_64");
             elfDeathFrame = Content.Load<Texture2D>("elf_dead_64");
             playerDeathFrame = Content.Load<Texture2D>("pukki_dead");
             elfFrames = LoadFrames("elf_64", 4);
             playerFrames = LoadFrames("pukki_bottle_centered", 4);
 
-            backgroundSound = Content.Load<SoundEffect>("drunkenTipTap");
+            backgroundSound = Content.Load<SoundEffect>("drunkenTipTapLoop");
             var backSong = backgroundSound.CreateInstance();
             backSong.IsLooped = true;
             backSong.Play();
             //base.BeginRun(); TODO what is this?
 
-            bottlehitsounds[0] = Content.Load<SoundEffect>("bottlehit1").CreateInstance();
-            bottlehitsounds[1] = Content.Load<SoundEffect>("bottlehit2").CreateInstance();
-            bottlehitsounds[2] = Content.Load<SoundEffect>("bottlehit3").CreateInstance();
-            bottlehitsounds[3] = Content.Load<SoundEffect>("bottlehit4").CreateInstance();
+            bottleHitSounds[0] = Content.Load<SoundEffect>("bottlehit1").CreateInstance();
+            bottleHitSounds[1] = Content.Load<SoundEffect>("bottlehit2").CreateInstance();
+            bottleHitSounds[2] = Content.Load<SoundEffect>("bottlehit3").CreateInstance();
+            bottleHitSounds[3] = Content.Load<SoundEffect>("bottlehit4").CreateInstance();
+            elfGrabSound = Content.Load<SoundEffect>("elfGrab").CreateInstance();
 
             player = new Pukki(
                 new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2)
@@ -172,8 +174,8 @@ namespace Joulurauhaa2019
             if (kState.IsKeyDown(Keys.D))
                 player.Body.Velocity += Vector2.UnitX;
 
-            if (mState.LeftButton == ButtonState.Pressed) //Buggy with Thinkpad touchpoint
-            //if (kState.IsKeyDown(Keys.Space))
+            //if (mState.LeftButton == ButtonState.Pressed) //Buggy with Thinkpad touchpoint
+            if (kState.IsKeyDown(Keys.Space))
                 player.Swing();
 
             switch (board.Colliding(ref player.Body))
@@ -225,11 +227,16 @@ namespace Joulurauhaa2019
                 {
                     case Pukki.Collision.Body:
                         player.AddElf(); //CircleFacer.Bounce(ref player.Body, ref t.Facer);
-                        t.Die();
+                        elfGrabSound.Play();
+                        t.isActive = false;// Die();
+                        t.Animater.Reset();
+                        t.Animater.SetDefaultSprite(square);
+                        //t.Animater.Reset();
+                        //t.Animater.SetDefaultSprite(square);
                         //TODO memory cleanup
                         break;
                     case Pukki.Collision.Bottle:
-                        bottlehitsounds[rand.Next(4)].Play();
+                        bottleHitSounds[rand.Next(4)].Play();
                         t.Die();
                         //t.SetTrajectoryFrom(player.Bottle.Position);
                         break;
