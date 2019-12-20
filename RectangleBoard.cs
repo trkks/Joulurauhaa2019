@@ -15,7 +15,7 @@ namespace Joulurauhaa2019
             height = h;
         }
 
-        public Bounds Colliding(CircleFacer target)
+        public Bounds Colliding(ref CircleFacer target)
         {
             if (target.Position.Y - target.Radius <= 0)
                 return Bounds.Top;
@@ -27,6 +27,15 @@ namespace Joulurauhaa2019
                 return Bounds.Right;
 
             return Bounds.Inside;
+        }
+
+        public bool Inside(ref CircleFacer target)
+        {
+            return (target.Position.Y - target.Radius > 0)
+                && (target.Position.Y + target.Radius < height)
+                && (target.Position.X - target.Radius > 0)
+                && (target.Position.X + target.Radius < width);
+                
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -8,8 +9,14 @@ namespace Pipo
     * Frames[0]    == default sprite
     * Frames[1..n] == animation frames
     */
+    //TODO Change name to EventedSpriter or EventfulAnimator for clarity ":D"
     class SpriteAnimater
     {
+        //BAD BAD BAD
+        public Action action;
+        public Action postAction;
+        public int actionFrame;
+
         //readonly int id;
         public bool IsAnimating;
         public readonly Vector2 Pivot;
@@ -67,11 +74,19 @@ namespace Pipo
                     currentFrame++;
                     currentFrame %= frameCount;
                     if (currentFrame == 0)
-                        if(isLooping)
+                        if (isLooping)
                             currentFrame = 1;
                         else
+                        {
+                            postAction();
                             Reset();
+                        }
                     passedDelay = 0;
+                }
+                if (currentFrame == actionFrame)
+                {
+                    action();
+                    actionFrame = -1;
                 }
             }
             return Frames[currentFrame];
