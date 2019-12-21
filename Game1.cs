@@ -18,7 +18,7 @@ namespace Joulurauhaa2019
         Left,
         Inside
     }
-    
+
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
@@ -29,16 +29,27 @@ namespace Joulurauhaa2019
         Texture2D circle;
         //DEBUG
 
-        const float elfHangAngle = (float) (45 * (Math.PI / 180));
-        const int elfSpawnRate = 2000; //Milliseconds
+        const float elfHangAngle = (float)(45 * (Math.PI / 180));
+
+        uint score;
+
+        uint elfSpawnRate = 2000; //Milliseconds
+        const uint elfSpawnRateThreshold = 5;
+        const uint elfSpawnRateSubtraction = 50;
+        const uint elfSpawnRateMin = 100;
+
+        const float elfSlowDownMultiplier = 0.3f;
 
         //Graphics
-        Texture2D sceneBackground;
+        Texture2D sceneFloor;
+        Texture2D sceneFraming;
         Texture2D elfGrabFrame;
         Texture2D elfDeathFrame;
         Texture2D playerDeathFrame;
+        Texture2D crosshair;
         Texture2D[] elfFrames;
         Texture2D[] playerFrames;
+        SpriteFont font;
 
         //Sounds
         SoundEffect backgroundSound;
@@ -56,288 +67,13 @@ namespace Joulurauhaa2019
         List<Tonttu> elves;
 
         Vector2 mousePos;
- 
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             graphics.PreferredBackBufferWidth = 972;
             graphics.PreferredBackBufferHeight = 640;
             Content.RootDirectory = "Content";
-        }
-
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
-        protected override void Initialize()
-        {
-            elves = new List<Tonttu>();
-            board = new RectangleBoard(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
-
-            rand = new Random();
-            mousePos = Vector2.Zero;
-
-            bottleHitSounds = new SoundEffectInstance[4];
-
-            base.Initialize();
-        }
-
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
-        protected override void LoadContent()
-        {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            //DEBUG
-            square = Content.Load<Texture2D>("unitSquare");
-            circle = Content.Load<Texture2D>("circle100");
-            //DEBUG
-
-            sceneBackground = Content.Load<Texture2D>("Background_486x320_texted"); 
-            elfGrabFrame = Content.Load<Texture2D>("elf_grab_64");
-            elfDeathFrame = Content.Load<Texture2D>("elf_dead_64");
-            playerDeathFrame = Content.Load<Texture2D>("pukki_dead");
-            elfFrames = LoadFrames("elf_64", 4);
-            playerFrames = LoadFrames("pukki_bottle_centered", 4);
-
-            backgroundSound = Content.Load<SoundEffect>("drunkenTipTapLoop");
-            var backSong = backgroundSound.CreateInstance();
-            backSong.IsLooped = true;
-            backSong.Play();
-            //base.BeginRun(); TODO what is this?
-
-            bottleHitSounds[0] = Content.Load<SoundEffect>("bottlehit1").CreateInstance();
-            bottleHitSounds[1] = Content.Load<SoundEffect>("bottlehit2").CreateInstance();
-            bottleHitSounds[2] = Content.Load<SoundEffect>("bottlehit3").CreateInstance();
-            bottleHitSounds[3] = Content.Load<SoundEffect>("bottlehit4").CreateInstance();
-            elfGrabSound = Content.Load<SoundEffect>("elfGrab").CreateInstance();
-
-            player = new Pukki(
-                new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2)
-                , playerFrames
-                , playerDeathFrame);
-
-            //Debug spawn 
-            //SpawnElf();
-        }
-
-        Texture2D[] LoadFrames(string tag, int n)
-        {
-            Texture2D[] textures = new Texture2D[n];
-            //Save default sprite into index 0
-            for (int i = 0; i < n; i++)
-            {
-                textures[i] = Content.Load<Texture2D>(tag + "_F" + i);
-            }
-            return textures;
-        }
-
-
-
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// game-specific content.
-        /// </summary>
-        protected override void UnloadContent()
-        {
-        }
-
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Update(GameTime gameTime)
-        {
-            MouseState mState = Mouse.GetState();
-            KeyboardState kState = Keyboard.GetState();
-
-            if (kState.IsKeyDown(Keys.Escape))
-                Exit();
-
-            if (player.GameOver)
-                return;
-
-            player.Body.Velocity = Vector2.Zero;
-            if (kState.IsKeyDown(Keys.W))
-                player.Body.Velocity += -Vector2.UnitY;
-            if (kState.IsKeyDown(Keys.A))
-                player.Body.Velocity += -Vector2.UnitX;
-            if (kState.IsKeyDown(Keys.S))
-                player.Body.Velocity += Vector2.UnitY;
-            if (kState.IsKeyDown(Keys.D))
-                player.Body.Velocity += Vector2.UnitX;
-
-            //if (mState.LeftButton == ButtonState.Pressed) //Buggy with Thinkpad touchpoint
-            if (kState.IsKeyDown(Keys.Space))
-                player.Swing();
-
-            switch (board.Colliding(ref player.Body))
-            {
-                case Bounds.Left:
-                    player.Body.Position.X = player.Body.Radius;
-                    break;
-                case Bounds.Right:
-                    player.Body.Position.X = graphics.PreferredBackBufferWidth - player.Body.Radius;
-                    break;
-                case Bounds.Top:
-                    player.Body.Position.Y = player.Body.Radius;
-                    break;
-                case Bounds.Bottom:
-                    player.Body.Position.Y = graphics.PreferredBackBufferHeight - player.Body.Radius;
-                    break;
-                default: //Inside
-                    break;
-            }
-
-            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            foreach (Tonttu t in elves)
-            {
-                if (!t.isActive)
-                    continue;
-
-                foreach (Tonttu t2 in elves)
-                {
-                    if (t2 == t)
-                        continue;
-                    if (t.Facer.CollidingWith(t2.Facer))
-                    {
-                        CircleFacer.Bounce(ref t.Facer, ref t2.Facer);
-                    }
-                }
-
-                switch (player.CollidingWith(t.Facer))
-                {
-                    case Pukki.Collision.Body:
-                        player.AddElf(); //CircleFacer.Bounce(ref player.Body, ref t.Facer);
-                        elfGrabSound.Play();
-                        t.isActive = false;// Die();
-                        t.Animater.Reset();
-                        t.Animater.SetDefaultSprite(square);
-                        //t.Animater.Reset();
-                        //t.Animater.SetDefaultSprite(square);
-                        //TODO memory cleanup
-                        break;
-                    case Pukki.Collision.Bottle:
-                        bottleHitSounds[rand.Next(4)].Play();
-                        t.Die();
-                        //t.SetTrajectoryFrom(player.Bottle.Position);
-                        break;
-                    default: //None
-                        break;
-                    //t.facer.velocity = Vector2.Zero;
-                    //t.animater.InitializeAnimation();
-                    //t.animater.SetDefaultSprite(elfGrabFrame);
-                }
-
-                switch (board.Colliding(ref t.Facer))
-                {
-                    case Bounds.Left:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitX);
-                        t.Facer.Position.X = t.Facer.Radius;
-                        break;
-                    case Bounds.Right:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitX);
-                        t.Facer.Position.X = graphics.PreferredBackBufferWidth - t.Facer.Radius;
-                        break;
-                    case Bounds.Top:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitY);
-                        t.Facer.Position.Y = t.Facer.Radius;
-                        break;
-                    case Bounds.Bottom:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitY);
-                        t.Facer.Position.Y = graphics.PreferredBackBufferHeight - t.Facer.Radius;
-                        break;
-                    default:
-                        break;
-                }
-                t.Facer.Facing = Vector2.Subtract(player.Body.Position, t.Facer.Position);
-
-                t.Facer.Move(deltaTime);
-            }
-
-
-            player.ApplySpeed();
-            player.Move(deltaTime);
-
-            mousePos.X = mState.X;
-            mousePos.Y = mState.Y;
-            player.Body.Facing = Vector2.Subtract(mousePos, player.Body.Position);
-
-            if (gameTime.TotalGameTime.Milliseconds % elfSpawnRate == 0)
-                SpawnElf();
-            
-            base.Update(gameTime);
-        }
-
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
-        {
-            GraphicsDevice.Clear(Color.Black);
-
-            
-            spriteBatch.Begin();
-
-            spriteBatch.Draw(sceneBackground, new Rectangle(0,0,Window.ClientBounds.Width,Window.ClientBounds.Height), null, Color.White);
-
-           // spriteBatch.Draw(circle 
-           //     ,new Rectangle(
-           //         (int)(player.Bottle.Position.X-player.Bottle.Radius), 
-           //         (int)(player.Bottle.Position.Y-player.Bottle.Radius), 
-           //         (int)player.Bottle.Radius*2, 
-           //         (int)player.Bottle.Radius*2)
-           //     ,Color.White);
-
-            foreach (Tonttu t in elves)
-            {
-                spriteBatch.Draw(t.Animater.GetCurrentFrame(),
-                             new Rectangle((int)t.Facer.Position.X, (int)t.Facer.Position.Y, (int)Tonttu.Radius*2, (int)Tonttu.Radius*2),
-                             null, Color.White, t.Facer.GetRotation(),
-                             t.Animater.Pivot, SpriteEffects.None,0);
-                //spriteBatch.Draw(t.animater.getFrame(), t.facer.position-t.animater.bodyOffset, Color.White);
-                spriteBatch.Draw(square, t.Facer.Position, Color.Pink);
-            }
-
-            spriteBatch.Draw(player.Animater.GetCurrentFrame(),
-                             new Rectangle((int)player.Body.Position.X, (int)player.Body.Position.Y, 250, 250),
-                             null, Color.White, player.Body.GetRotation(),
-                             player.Animater.Pivot, SpriteEffects.None,0);
-            spriteBatch.Draw(square, player.Body.Position, Color.Pink);
-
-            for (int i=0; i<player.HangingElves; i++)
-            {
-                Vector2 elfSpritePosition = player.Body.Position 
-                    + Vector2.Transform(Pukki.Radius * Vector2.Normalize(player.Body.Facing),Matrix.CreateRotationZ(i*elfHangAngle));
-                Vector2 elfPlayerOffset = Vector2.Normalize(Vector2.Subtract(player.Body.Position, elfSpritePosition));
-                Rectangle elfRectangle = new Rectangle(
-                    (int)(elfSpritePosition.X-Tonttu.Radius), 
-                    (int)(elfSpritePosition.Y-Tonttu.Radius), 
-                    (int)Tonttu.Radius*2, 
-                    (int)Tonttu.Radius*2);
-                spriteBatch.Draw(elfGrabFrame
-                             , elfRectangle
-                             , Color.White);// null, Color.White, (float)Math.Atan2(elfPlayerOffset.X, elfPlayerOffset.Y)
-                             //, ???, Tonttu.Radius) - elfSpritePosition, SpriteEffects.None,0);
-            }
-
-
-            //spriteBatch.Draw(sceneFraming, 
-            //    new Rectangle(0,0,972,640),
-            //    null, Color.White);
-            spriteBatch.Draw(square, mousePos-new Vector2(5,5), Color.Pink);
-
-            spriteBatch.End();
-
-
-            base.Draw(gameTime);
         }
 
         private void SpawnElf()
@@ -372,6 +108,296 @@ namespace Joulurauhaa2019
                 , elfFrames
                 , elfDeathFrame);
             elves.Add(theElf);
+        }
+
+        Texture2D[] LoadFrames(string tag, int n)
+        {
+            Texture2D[] textures = new Texture2D[n];
+            //Save default sprite into index 0
+            for (int i = 0; i < n; i++)
+            {
+                textures[i] = Content.Load<Texture2D>(tag + "_F" + i);
+            }
+            return textures;
+        }
+
+
+        /// <summary>
+        /// Allows the game to perform any initialization it needs to before starting to run.
+        /// This is where it can query for any required services and load any non-graphic
+        /// related content.  Calling base.Initialize will enumerate through any components
+        /// and initialize them as well.
+        /// </summary>
+        protected override void Initialize()
+        {
+            elves = new List<Tonttu>();
+            board = new RectangleBoard(graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
+
+            rand = new Random();
+            mousePos = Vector2.Zero;
+
+            score = 0;
+
+            base.Initialize();
+        }
+
+        /// <summary>
+        /// LoadContent will be called once per game and is the place to load
+        /// all of your content.
+        /// </summary>
+        protected override void LoadContent()
+        {
+            // Create a new SpriteBatch, which can be used to draw textures.
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            //DEBUG
+            square = Content.Load<Texture2D>("unitSquare");
+            circle = Content.Load<Texture2D>("circle100");
+            //DEBUG
+
+            sceneFloor = Content.Load<Texture2D>("floor_486x320");
+            sceneFraming = Content.Load<Texture2D>("framing_486x320");
+            elfGrabFrame = Content.Load<Texture2D>("elf_grab_64");
+            elfDeathFrame = Content.Load<Texture2D>("elf_dead_64");
+            playerDeathFrame = Content.Load<Texture2D>("pukki_Larger_bottle_dead");
+            crosshair = Content.Load<Texture2D>("crosshair");
+            elfFrames = LoadFrames("elf_64", 4);
+            playerFrames = LoadFrames("pukki_Larger_bottle", 4);
+
+            backgroundSound = Content.Load<SoundEffect>("drunkenTipTapLoop");
+            var backSong = backgroundSound.CreateInstance();
+            backSong.IsLooped = true;
+            backSong.Play();
+            //base.BeginRun(); TODO what is this?
+
+            bottleHitSounds = new SoundEffectInstance[2];
+            bottleHitSounds[0] = Content.Load<SoundEffect>("bottlehit3").CreateInstance();
+            bottleHitSounds[1] = Content.Load<SoundEffect>("bottlehit4").CreateInstance();
+
+            elfGrabSound = Content.Load<SoundEffect>("elfGrab").CreateInstance();
+
+            font = Content.Load<SpriteFont>("File");
+
+            player = new Pukki(
+                new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2)
+                , playerFrames
+                , playerDeathFrame);
+
+            //Debug spawn 
+            //SpawnElf();
+            //SpawnElf();
+        }
+
+        /// <summary>
+        /// UnloadContent will be called once per game and is the place to unload
+        /// game-specific content.
+        /// </summary>
+        protected override void UnloadContent()
+        {
+        }
+
+        /// <summary>
+        /// Allows the game to run logic such as updating the world,
+        /// checking for collisions, gathering input, and playing audio.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        protected override void Update(GameTime gameTime)
+        {
+            MouseState mState = Mouse.GetState();
+            KeyboardState kState = Keyboard.GetState();
+
+            if (kState.IsKeyDown(Keys.Escape))
+                Exit();
+
+            mousePos.X = mState.X;
+            mousePos.Y = mState.Y;
+
+            if (player.GameOver)
+            {
+                foreach (Tonttu t in elves)
+                    t.Animater.SetDelays(new int[] { 14,4,14,4 });
+                return;
+            }
+
+            player.Body.Velocity = Vector2.Zero;
+            if (kState.IsKeyDown(Keys.W))
+                player.Body.Velocity += -Vector2.UnitY;
+            if (kState.IsKeyDown(Keys.A))
+                player.Body.Velocity += -Vector2.UnitX;
+            if (kState.IsKeyDown(Keys.S))
+                player.Body.Velocity += Vector2.UnitY;
+            if (kState.IsKeyDown(Keys.D))
+                player.Body.Velocity += Vector2.UnitX;
+
+            if (mState.LeftButton == ButtonState.Pressed) //Buggy with Thinkpad touchpoint
+            //if (kState.IsKeyDown(Keys.Space))
+                player.Swing();
+
+            switch (board.Colliding(ref player.Body))
+            {
+                case Bounds.Left:
+                    player.Body.Position.X = player.Body.Radius;
+                    break;
+                case Bounds.Right:
+                    player.Body.Position.X = graphics.PreferredBackBufferWidth - player.Body.Radius;
+                    break;
+                case Bounds.Top:
+                    player.Body.Position.Y = player.Body.Radius;
+                    break;
+                case Bounds.Bottom:
+                    player.Body.Position.Y = graphics.PreferredBackBufferHeight - player.Body.Radius;
+                    break;
+                default: //Inside
+                    break;
+            }
+
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            foreach (Tonttu t in elves)
+            {
+
+                if (t.IsDead) //Dead elf doesnt need to check collisions
+                {
+                    t.Move(deltaTime);
+                    continue;
+                }
+                else
+                    t.ScaleVelocity(1); //reset slowdown
+
+                t.Facer.Facing = Vector2.Subtract(player.Body.Position, t.Facer.Position);
+
+                foreach (Tonttu t2 in elves)
+                {
+                    if (t2 == t)
+                        continue;
+                    if (t.Facer.CollidingWith(t2.Facer))
+                    {
+                        if (t2.IsDead)
+                            t.ScaleVelocity(elfSlowDownMultiplier);
+                        else
+                            CircleFacer.Bounce(ref t.Facer, ref t2.Facer);
+                    }
+                }
+
+                if (!t.Facer.IsHitBoxActive)
+                    continue;
+
+                switch (player.CollidingWith(t.Facer))
+                {
+                    case Pukki.Collision.Body:
+                        player.AddElf(); 
+                        elfGrabSound.Play();
+                        t.Deactivate(square);
+                        //TODO memory cleanup?
+                        break;
+                    case Pukki.Collision.Bottle:
+                        bottleHitSounds[rand.Next(bottleHitSounds.Length)].Play();
+                        t.Die(player.Bottle.Position);
+                        score++;
+                        break;
+                    default: //Pukki.Collision.None
+                        break;
+                }
+
+                switch (board.Colliding(ref t.Facer))
+                {
+                    case Bounds.Left:
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitX);
+                        t.Facer.Position.X = t.Facer.Radius;
+                        break;
+                    case Bounds.Right:
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitX);
+                        t.Facer.Position.X = graphics.PreferredBackBufferWidth - t.Facer.Radius;
+                        break;
+                    case Bounds.Top:
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitY);
+                        t.Facer.Position.Y = t.Facer.Radius;
+                        break;
+                    case Bounds.Bottom:
+                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitY);
+                        t.Facer.Position.Y = graphics.PreferredBackBufferHeight - t.Facer.Radius;
+                        break;
+                    default:
+                        break;
+                }
+                t.Move(deltaTime);
+            }
+
+            player.ApplySpeed();
+            player.Move(deltaTime);
+
+            player.Body.Facing = Vector2.Subtract(mousePos, player.Body.Position);
+
+            if (gameTime.TotalGameTime.Milliseconds % elfSpawnRate == 0)
+                SpawnElf();
+
+            if (score % elfSpawnRateThreshold == 0)
+            {
+                elfSpawnRate -= elfSpawnRateSubtraction;
+                if (elfSpawnRate < elfSpawnRateMin)
+                    elfSpawnRate = elfSpawnRateMin;
+            }
+            
+            base.Update(gameTime);
+        }
+
+        /// <summary>
+        /// This is called when the game should draw itself.
+        /// </summary>
+        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        protected override void Draw(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.Black);
+
+            
+            spriteBatch.Begin();
+
+            spriteBatch.Draw(sceneFloor, new Rectangle(0,0,Window.ClientBounds.Width,Window.ClientBounds.Height), null, Color.White);
+
+           // spriteBatch.Draw(circle 
+           //     ,new Rectangle(
+           //         (int)(player.Bottle.Position.X-player.Bottle.Radius), 
+           //         (int)(player.Bottle.Position.Y-player.Bottle.Radius), 
+           //         (int)player.Bottle.Radius*2, 
+           //         (int)player.Bottle.Radius*2)
+           //     ,Color.White);
+
+            foreach (Tonttu t in elves)
+            {
+                spriteBatch.Draw(t.Animater.GetCurrentFrame(),
+                             new Rectangle(t.Facer.Position.ToPoint(), new Point((int)Tonttu.Radius*2)),
+                             null, Color.White, t.Facer.GetRotation(),
+                             t.pivot, SpriteEffects.None,0);
+            }
+
+            spriteBatch.Draw(player.Animater.GetCurrentFrame(),
+                             new Rectangle(player.Body.Position.ToPoint(), new Point(Pukki.SpriteWidth, Pukki.SpriteHeight)),
+                             null, Color.White, player.Body.GetRotation(),
+                             player.pivot, SpriteEffects.None,0);
+
+            for (int i=0; i<player.HangingElves; i++)
+            {
+                float hangingDistance = i <= 8 ? Pukki.HangingDistance : Pukki.HangingDistance * 0.6f;
+                Vector2 elfSpritePosition = player.Body.Position 
+                    + Vector2.Transform(hangingDistance * Vector2.Normalize(player.Body.Facing),Matrix.CreateRotationZ(i*elfHangAngle));
+                Vector2 elfFacingPlayer = Vector2.Normalize(Vector2.Subtract(player.Body.Position, elfSpritePosition));
+                Rectangle elfRectangle = new Rectangle(
+                    elfSpritePosition.ToPoint(), 
+                    new Point((int)Tonttu.Radius*2));
+                spriteBatch.Draw(elfGrabFrame
+                             , elfRectangle
+                             , null, Color.White, (float)Math.Atan2(elfFacingPlayer.Y, elfFacingPlayer.X),
+                             new Vector2(Tonttu.Radius, Tonttu.Radius), SpriteEffects.None, 0);//, ???, Tonttu.Radius) - elfSpritePosition, SpriteEffects.None,0);
+            }
+
+            spriteBatch.Draw(crosshair, new Rectangle((int)mousePos.X - 15, (int)mousePos.Y - 15, 30, 30), Color.White);
+
+            spriteBatch.Draw(sceneFraming, new Rectangle(0,0,Window.ClientBounds.Width,Window.ClientBounds.Height), null, Color.White);
+            spriteBatch.DrawString(font, "Casualties:"+score, new Vector2(15, 7), Color.White);
+
+            spriteBatch.End();
+
+
+            base.Draw(gameTime);
         }
     }
 }

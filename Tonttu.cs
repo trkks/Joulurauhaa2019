@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Pipo;
 
@@ -9,13 +10,14 @@ namespace Joulurauhaa2019
         public const float Radius = 32;
         public const float Speed = 200;
         public readonly SpriteAnimater Animater;
-        public bool isActive;
+        public bool IsDead;
         public CircleFacer Facer;
 
         private readonly Texture2D deathFrame;
-        private readonly Vector2 pivot;
+        public readonly Vector2 pivot;
         private readonly int[] delays; 
 
+        private float lerp;
         /// <summary>
         /// velocity should normally be unit in length, as it is scaled with 
         /// </summary>
@@ -23,15 +25,15 @@ namespace Joulurauhaa2019
         {
             this.deathFrame = deathFrame;
             pivot = new Vector2( 32, 35 );
-            delays = new int[]{ 5,2,5,2 };
+            delays = new int[]{ 7,2,7,2 };
 
             Facer = new CircleFacer(Radius, position, Speed*velocity, true);
-            Animater = new SpriteAnimater(frames.Length, pivot);
+            Animater = new SpriteAnimater(frames.Length);
 
             Animater.SetFrames(frames, delays);
             Animater.Start(true);
 
-            isActive = true;
+            IsDead = false;
         }
 
         /// <summary>
@@ -42,15 +44,47 @@ namespace Joulurauhaa2019
         {
             Vector2 direction = Vector2.Normalize(Vector2.Subtract(Facer.Position, target));
             //TODO Remove hardcode?
-            this.Facer.Velocity = 4 * Speed * direction;
+            this.Facer.Velocity = Speed * direction;
         }
 
-        public void Die()
+        public void ScaleVelocity(float factor)
         {
-            //TODO Memory cleanup
+            this.Facer.Velocity = Vector2.Normalize(this.Facer.Velocity) * Speed * factor;
+        }
+            
+        public void Die(Vector2 target)
+        {
+            SetTrajectoryFrom(target);
+            ScaleVelocity(3);
+
+            Animater.SetFrames(
+                new Texture2D[] { deathFrame, deathFrame, deathFrame, deathFrame },
+                new int[] { 0,0,0,0 } );
+            IsDead = true;
+
+            Animater.SetAction(
+                () => { return; },
+                () => { Facer.Velocity = Vector2.Zero; Facer.IsHitBoxActive = false; },
+                3
+            );
+        }
+
+        public void Deactivate(Texture2D newDefault)
+        {
             Animater.Reset();
-            Animater.SetDefaultSprite(deathFrame);
-            isActive = false;
+            Animater.SetDefaultSprite(newDefault);
+            Facer.IsHitBoxActive = false;
+        }
+
+        public void Move(float deltaTime)
+        {
+            lerp += 0.25f;
+            if (lerp >= 1)
+                lerp = 0;
+
+            if (!IsDead)
+                Facer.Velocity = Vector2.Lerp(Facer.Velocity, Facer.Facing, lerp);
+            Facer.Move(deltaTime);
         }
     }
 }

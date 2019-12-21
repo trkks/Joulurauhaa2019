@@ -29,7 +29,8 @@ namespace Pipo
 
         public void Move(float deltaTime)
         {
-            Position += Velocity * deltaTime;
+            if (IsHitBoxActive)
+                Position += Velocity * deltaTime;
         }
 
         public float GetRotation()

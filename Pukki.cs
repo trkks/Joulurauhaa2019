@@ -17,31 +17,36 @@ namespace Joulurauhaa2019
         //const double SWING_TIME = 14;
         //const string tag = "pukki";
         public const float Radius = 70;
-        public const float Speed = 100;
-        public const float BottleOffset = 85;
+        public const float BottleOffset = 110;
+        public const float HangingDistance = Radius * 1.2f;
+        public const int SpriteWidth = 900/(225/(int)Radius);
+        public const int SpriteHeight = 550/(225/(int)Radius);
+        public const int MaxHangingElves = 16;
         public readonly SpriteAnimater Animater;
+        public float Speed = 300;
         public bool GameOver;
         public CircleFacer Body;
         public CircleFacer Bottle;
         public int HangingElves = 0;
 
         private readonly Texture2D deathFrame;
-        private readonly Vector2 pivot;
+        public readonly Vector2 pivot;
         private readonly int[] delays;
+        private const float slowDownMultiplier = 0.75f;
 
         public Pukki(Vector2 position, Texture2D[] frames, Texture2D deathFrame)
         {
             this.deathFrame = deathFrame;
-            pivot = new Vector2( 135, 125 );
+            pivot = new Vector2( 440, 260 );
             delays = new int[]{ 0,2,6,4 };
 
             Body = new CircleFacer(Radius, position, Vector2.Zero, true);
             Bottle = new CircleFacer(
-                0.75f*Radius, 
+                Radius*0.6f, 
                 position + BottleOffset*Vector2.UnitX,
                 Vector2.Zero,
                 false);
-            Animater = new SpriteAnimater(frames.Length, pivot);
+            Animater = new SpriteAnimater(frames.Length);
             
             Animater.SetFrames(frames, delays);
         }
@@ -87,7 +92,8 @@ namespace Joulurauhaa2019
         public void AddElf()
         {
             HangingElves++;
-            if (HangingElves>= 8)
+            Speed *= slowDownMultiplier;
+            if (HangingElves >= MaxHangingElves)
                 Die();
         }
     }
