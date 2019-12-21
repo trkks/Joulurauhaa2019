@@ -19,7 +19,6 @@ namespace Pipo
 
         //readonly int id;
         public bool IsAnimating;
-        public readonly Vector2 Pivot;
         private Texture2D defaultSprite;
         public Texture2D[] Frames;
 
@@ -29,10 +28,9 @@ namespace Pipo
         private int passedDelay;
         private int[] delays;
 
-        public SpriteAnimater(int frameCount, Vector2 pivot)
+        public SpriteAnimater(int frameCount)
         {
             this.frameCount = frameCount;
-            this.Pivot = pivot;
             isLooping = false;
             IsAnimating = false;
             currentFrame = 0;
@@ -45,6 +43,19 @@ namespace Pipo
             this.Frames = frames;
             this.delays = delays;
             defaultSprite = Frames[0];
+        }
+
+        public void SetAction(Action onEnter, Action onEnd, int frame)
+        {
+            if (frame >= frameCount || frame < 0)
+            {
+                action = () => { return; };
+                postAction = () => { return; };
+                actionFrame = 0;
+            }
+            action = onEnter;
+            postAction = onEnd;
+            actionFrame = frame;
         }
 
         public void Start(bool looping)
@@ -62,6 +73,12 @@ namespace Pipo
             passedDelay = 0;
         }
 
+        public void SetDelays(int[] delays)
+        {
+            if (this.delays.Length == delays.Length)
+                this.delays = delays;
+        }
+
         public void SetDefaultSprite(Texture2D sprite)
         {
             defaultSprite = sprite;
@@ -76,15 +93,15 @@ namespace Pipo
                 {
                     currentFrame++;
                     currentFrame %= frameCount;
-                    if (!isLooping)
-                    {
+                    //if (!isLooping)
+                    //{
                         if (actionFrame < -1)
                         {
                             Reset();
                             postAction();
                             actionFrame = -1;
                         }
-                    }
+                    //}
                     passedDelay = 0;
                 }
                 if (currentFrame == actionFrame)
