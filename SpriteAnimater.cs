@@ -14,7 +14,7 @@ namespace Pipo
     {
         //BAD BAD BAD
         public Action action;
-        public Action postAction;
+        public Action postAnimationAction;
         public int actionFrame;
 
         //readonly int id;
@@ -50,11 +50,11 @@ namespace Pipo
             if (frame >= frameCount || frame < 0)
             {
                 action = () => { return; };
-                postAction = () => { return; };
+                postAnimationAction = () => { return; };
                 actionFrame = 0;
             }
             action = onEnter;
-            postAction = onEnd;
+            postAnimationAction = onEnd;
             actionFrame = frame;
         }
 
@@ -92,16 +92,15 @@ namespace Pipo
                 if (passedDelay >= delays[currentFrame])
                 {
                     currentFrame++;
-                    currentFrame %= frameCount;
                     //if (!isLooping)
                     //{
-                        if (actionFrame < -1)
-                        {
-                            Reset();
-                            postAction();
-                            actionFrame = -1;
-                        }
                     //}
+                    if (actionFrame < -1 && currentFrame == frameCount)
+                    {
+                        postAnimationAction();
+                        actionFrame = -1;
+                    }
+                    currentFrame %= frameCount;
                     passedDelay = 0;
                 }
                 if (currentFrame == actionFrame)

@@ -32,17 +32,17 @@ namespace Joulurauhaa2019
         private readonly Texture2D deathFrame;
         public readonly Vector2 pivot;
         private readonly int[] delays;
-        private const float slowDownMultiplier = 0.75f;
+        private const float slowDownMultiplier = 0.90f;
 
         public Pukki(Vector2 position, Texture2D[] frames, Texture2D deathFrame)
         {
             this.deathFrame = deathFrame;
             pivot = new Vector2( 440, 260 );
-            delays = new int[]{ 0,2,6,4 };
+            delays = new int[]{ 0,2,6,6 };
 
             Body = new CircleFacer(Radius, position, Vector2.Zero, true);
             Bottle = new CircleFacer(
-                Radius*0.6f, 
+                Radius*1.5f,//0.6 
                 position + BottleOffset*Vector2.UnitX,
                 Vector2.Zero,
                 false);
@@ -68,9 +68,9 @@ namespace Joulurauhaa2019
                 return;
 
             Animater.Start(false);
-            Animater.actionFrame = 3;
+            Animater.actionFrame = 2;
             Animater.action = () => { Bottle.IsHitBoxActive = true; };
-            Animater.postAction = () => { Bottle.IsHitBoxActive = false; };
+            Animater.postAnimationAction = () => { Animater.Reset(); Bottle.IsHitBoxActive = false; };
         }
 
         public Collision CollidingWith(CircleFacer target)

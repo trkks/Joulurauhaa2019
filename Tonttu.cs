@@ -65,7 +65,7 @@ namespace Joulurauhaa2019
             Animater.SetAction(
                 () => { return; },
                 () => { Facer.Velocity = Vector2.Zero; Facer.IsHitBoxActive = false; },
-                3
+                0
             );
         }
 
