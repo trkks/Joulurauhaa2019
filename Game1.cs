@@ -10,6 +10,7 @@ using Pipo;
 
 namespace Joulurauhaa2019
 {
+    // Muutos
     public enum Bounds
     {
         Top,
