@@ -3,13 +3,9 @@ using System;
 
 namespace Pipo 
 {
-    //TODO sprite into own class -> recognition with id -> ECS??
     class CircleFacer
     {
-        //public readonly int id; //static readonly?
-        //public readonly string Tag; 
-
-        public bool IsHitBoxActive; //TODO protection level :thinking:
+        public bool IsHitBoxActive;
         public Vector2 Position;
         public Vector2 Facing;
         public Vector2 Velocity;
@@ -43,15 +39,6 @@ namespace Pipo
             return IsHitBoxActive 
                 && Vector2.Distance(Position, target.Position) <= (Radius + target.Radius);
         }
-
-        //Change this to copy to RectangleBoard?
-        //public bool SquareCollision(CircleFacer target)
-        //{
-        //    return (position.X + size > target.position.X 
-        //         && position.X < target.position.X + target.size
-        //         && position.Y + size > target.position.Y 
-        //         && position.Y < target.position.Y + target.size);
-        //}
 
         //TODO Possibly needs some more work: weird jittering
         public static void Bounce(ref CircleFacer cf1, ref CircleFacer cf2)

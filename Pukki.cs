@@ -14,8 +14,6 @@ namespace Joulurauhaa2019
             None
         }
 
-        //const double SWING_TIME = 14;
-        //const string tag = "pukki";
         public const float Radius = 70;
         public const float BottleOffset = 110;
         public const float HangingDistance = Radius * 1.2f;
@@ -42,7 +40,7 @@ namespace Joulurauhaa2019
 
             Body = new CircleFacer(Radius, position, Vector2.Zero, true);
             Bottle = new CircleFacer(
-                Radius*1.5f,//0.6 
+                Radius*1.5f,
                 position + BottleOffset*Vector2.UnitX,
                 Vector2.Zero,
                 false);

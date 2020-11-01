@@ -10,7 +10,6 @@ using Pipo;
 
 namespace Joulurauhaa2019
 {
-    // Muutos
     public enum Bounds
     {
         Top,
@@ -25,10 +24,9 @@ namespace Joulurauhaa2019
     /// </summary>
     public class Game1 : Game
     {
-        //DEBUG
+
+        // This is to hide elf-sprites when they're attached to pukki
         Texture2D square;
-        Texture2D circle;
-        //DEBUG
 
         const float elfHangAngle = (float)(45 * (Math.PI / 180));
 
@@ -131,7 +129,7 @@ namespace Joulurauhaa2019
             score = 0;
             elfSpawnRate = 600;
             backgroundSound.Stop();
-            backgroundSound = Content.Load<SoundEffect>("drunkenTipTapLoop").CreateInstance();
+            backgroundSound = Content.Load<SoundEffect>("drunkenTipTap").CreateInstance();
             backgroundSound.IsLooped = true;
             backgroundSound.Play();
         }
@@ -165,10 +163,7 @@ namespace Joulurauhaa2019
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            //DEBUG
             square = Content.Load<Texture2D>("unitSquare");
-            circle = Content.Load<Texture2D>("circle100");
-            //DEBUG
 
             sceneFloor = Content.Load<Texture2D>("floor_486x320");
             sceneFraming = Content.Load<Texture2D>("framing_486x320");
@@ -179,7 +174,7 @@ namespace Joulurauhaa2019
             elfFrames = LoadFrames("elf_64", 4);
             playerFrames = LoadFrames("pukki_Larger_bottle", 4);
 
-            backgroundSound = Content.Load<SoundEffect>("drunkenTipTapLoop").CreateInstance();
+            backgroundSound = Content.Load<SoundEffect>("drunkenTipTap").CreateInstance();
             backgroundSound.IsLooped = true;
             backgroundSound.Play();
 
@@ -319,7 +314,6 @@ namespace Joulurauhaa2019
                         player.AddElf(); 
                         elfGrabSound.Play();
                         t.Deactivate(square);
-                        //TODO memory cleanup?
                         break;
                     case Pukki.Collision.Bottle:
                         bottleHitSounds[rand.Next(bottleHitSounds.Length)].Play();
@@ -354,29 +348,7 @@ namespace Joulurauhaa2019
                     t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitX);
                     t.Facer.Position.X = graphics.PreferredBackBufferWidth - t.Facer.Radius;
                 }
-/*
-                switch (board.Colliding(ref t.Facer))
-                {
-                    case Bounds.Left:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitX);
-                        t.Facer.Position.X = t.Facer.Radius;
-                        break;
-                    case Bounds.Top:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, Vector2.UnitY);
-                        t.Facer.Position.Y = t.Facer.Radius;
-                        break;
-                    case Bounds.Right:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitX);
-                        t.Facer.Position.X = graphics.PreferredBackBufferWidth - t.Facer.Radius;
-                        break;
-                    case Bounds.Bottom:
-                        t.Facer.Velocity = Vector2.Reflect(t.Facer.Velocity, -Vector2.UnitY);
-                        t.Facer.Position.Y = graphics.PreferredBackBufferHeight - t.Facer.Radius;
-                        break;
-                    default:
-                        break;
-                }
-*/
+
                 t.Move(deltaTime);
             }
 
@@ -413,13 +385,6 @@ namespace Joulurauhaa2019
 
             spriteBatch.Draw(sceneFloor, new Rectangle(0,0,Window.ClientBounds.Width,Window.ClientBounds.Height), null, Color.White);
 
-           // spriteBatch.Draw(circle 
-           //     ,new Rectangle(
-           //         (int)(player.Bottle.Position.X-player.Bottle.Radius), 
-           //         (int)(player.Bottle.Position.Y-player.Bottle.Radius), 
-           //         (int)player.Bottle.Radius*2, 
-           //         (int)player.Bottle.Radius*2)
-           //     ,Color.White);
 
             foreach (Tonttu t in elves)
             {
@@ -452,7 +417,7 @@ namespace Joulurauhaa2019
             spriteBatch.Draw(crosshair, new Rectangle((int)mousePos.X - 15, (int)mousePos.Y - 15, 30, 30), Color.White);
 
             spriteBatch.Draw(sceneFraming, new Rectangle(0,0,Window.ClientBounds.Width,Window.ClientBounds.Height), null, Color.White);
-            spriteBatch.DrawString(font, "Toivotukset:"+score, new Vector2(15, 7), Color.White);
+            spriteBatch.DrawString(font, "Toivotukset:"+score, new Vector2(15, 0), Color.White);
 
             spriteBatch.End();
 

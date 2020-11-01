@@ -18,6 +18,7 @@ namespace Joulurauhaa2019
         private readonly int[] delays; 
 
         private float lerp;
+
         /// <summary>
         /// velocity should normally be unit in length, as it is scaled with 
         /// </summary>
@@ -43,7 +44,6 @@ namespace Joulurauhaa2019
         public void SetTrajectoryFrom(Vector2 target)
         {
             Vector2 direction = Vector2.Normalize(Vector2.Subtract(Facer.Position, target));
-            //TODO Remove hardcode?
             this.Facer.Velocity = Speed * direction;
         }
 
