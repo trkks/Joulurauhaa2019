@@ -8,5 +8,5 @@ inside project directory
 
 # The possibly non-exhaustive nor minimal building requirements
 - dotnet version 3.1.302
-- PackageReferences in the .csproj file (Monogame 3.8)
+- PackageReferences in the .csproj file ([Monogame 3.8](https://www.monogame.net/downloads/))
 
