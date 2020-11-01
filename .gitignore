@@ -1,0 +1,5 @@
+*.swp
+Content/bin
+Content/obj
+bin
+obj
