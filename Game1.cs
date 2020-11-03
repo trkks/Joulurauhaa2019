@@ -241,42 +241,29 @@ namespace Joulurauhaa2019
             if (kState.IsKeyDown(Keys.D))
                 player.Body.Velocity += Vector2.UnitX;
 
-            //if (mState.LeftButton == ButtonState.Pressed) //Buggy with Thinkpad touchpoint
             if (kState.IsKeyDown(Keys.Space))
                 player.Swing();
 
             /*top*/
             if (player.Body.Position.Y - player.Body.Radius <= 0)
+            {
                 player.Body.Position.Y = player.Body.Radius;
-            /*bottom*/
-            else if (player.Body.Position.Y + player.Body.Radius >  graphics.PreferredBackBufferHeight)
-                player.Body.Position.Y = graphics.PreferredBackBufferHeight - player.Body.Radius;
+            }
+            /*bottom*/                                      // NOTE Dont ask why 3 works here...
+            else if (player.Body.Position.Y + player.Body.Radius*3 >= graphics.PreferredBackBufferHeight)
+            {
+                player.Body.Position.Y = graphics.PreferredBackBufferHeight - player.Body.Radius*3;
+            }
             /*left*/
             if (player.Body.Position.X - player.Body.Radius <= 0)
-                player.Body.Position.X = player.Body.Radius;
-            /*right*/
-            else if (player.Body.Position.X + player.Body.Radius > graphics.PreferredBackBufferWidth)
-                player.Body.Position.X = graphics.PreferredBackBufferWidth - player.Body.Radius;
-
-            /*
-            switch (board.Colliding(ref player.Body))
             {
-                case Bounds.Left:
-                    player.Body.Position.X = player.Body.Radius;
-                    break;
-                case Bounds.Right:
-                    player.Body.Position.X = graphics.PreferredBackBufferWidth - player.Body.Radius;
-                    break;
-                case Bounds.Top:
-                    player.Body.Position.Y = player.Body.Radius;
-                    break;
-                case Bounds.Bottom:
-                    player.Body.Position.Y = graphics.PreferredBackBufferHeight - player.Body.Radius;
-                    break;
-                default: //Inside
-                    break;
+                player.Body.Position.X = player.Body.Radius;
             }
-            */
+            /*right*/                                       // See NOTE above
+            else if (player.Body.Position.X + player.Body.Radius*3 >= graphics.PreferredBackBufferWidth)
+            {
+                player.Body.Position.X = graphics.PreferredBackBufferWidth - player.Body.Radius*3;
+            }
 
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             foreach (Tonttu t in elves)
